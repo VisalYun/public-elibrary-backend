@@ -1,0 +1,30 @@
+{
+  "name": "e-library-backend",
+  "version": "1.0.0",
+  "description": "- Postgres\r - Pgadmin",
+  "main": "app.js",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "multer": "^1.4.2",
+    "nodemon": "^2.0.12",
+    "pg": "^8.6.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.6.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VisalYun/public-elibrary-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VisalYun/public-elibrary-backend/issues"
+  },
+  "homepage": "https://github.com/VisalYun/public-elibrary-backend#readme"
+}
