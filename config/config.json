@@ -2,7 +2,7 @@
   "development": {
     "username": "{YOUR_USERNAME}",
     "password": "{YOUR_PASSWORD}",
-    "database": "{YOUR_DB_NAME}",
+    "database": "{YOUR_DATABASE}",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },

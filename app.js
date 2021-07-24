@@ -1,13 +1,20 @@
 const express = require('express')
-var cors = require('cors')
-const multer = require('multer');
-const { sequelize, Book, Chapters } = require('./models')
+const cors = require('cors')
+const session = require('express-session');
+const redis = require('redis')
+const connectRedis = require('connect-redis')
+const passport = require('passport');
+const multer = require('multer')
+const genPassword = require('./lib/passwordUtil').genPassword;
+const { sequelize, Book, Chapters, User } = require('./models')
 
 const app = express()
-app.use(cors())
 app.use(express.json())
-app.use('/uploads', express.static('uploads'))
 
+app.use(cors())
+
+/* ------------------ File Upload Config ------------------ */
+app.use('/uploads', express.static('uploads'))
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, './uploads/');
@@ -31,6 +38,97 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
+/* ------------------ Session Config ------------------ */
+const RedisStore = connectRedis(session)
+//Configure redis client
+const redisClient = redis.createClient({
+    host: 'localhost',
+    port: 6379
+})
+redisClient.on('error', err => {
+    console.log('Could not establish a connection with redis. ' + err);
+});
+redisClient.on('connect', err => {
+    console.log('Connected to redis successfully');
+});
+
+//Configure session middleware
+app.use(session({
+    secret: 'secret$%^134',
+    resave: false,
+    saveUninitialized: true,
+    store: new RedisStore({ client: redisClient }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 // Equals 1 day (1 day * 24 hr/1 day * 60 min/1 hr * 60 sec/1 min * 1000 ms / 1 sec)
+    }
+}))
+
+/* ------------------ Passport Config ------------------ */
+require('./config/passport');
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use((req, res, next) => {
+    console.log(req.session);
+    console.log(req.user);
+    next();
+})
+
+/* ------------------ Auth route ------------------ */
+app.post("/register", async(req, res) => {
+    const { username, password } = req.body
+    
+    const saltHash = genPassword(password);
+    const salt = saltHash.salt;
+    const hash = saltHash.hash;
+    
+    await User.findOne({where: {username}})
+        .then(async user => {
+            if(user) { return res.json("Username is already taken") }
+
+            try {
+                const user = await User.create({ username, salt, hash })
+                return res.json(user)
+            } catch (e) {
+                console.log(e)
+                return res.status(500).json(e)
+            }
+        })
+        .catch((e) => {
+            console.log(e)
+            return res.status(500).json(e)
+        });
+})
+
+app.post("/login", passport.authenticate('local', { failureRedirect: '/login-failure', successRedirect: '/login-success' }));
+
+app.get("/logout", (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return console.log(err);
+        }
+        return res.json("Logout success!")
+    });
+});
+
+app.get("/login-success", (req, res) => {
+    return res.json("Login successful")
+})
+
+app.get("/login-failure", (req, res) => {
+    return res.json("Login fail! Please check your login credential again")
+})
+
+const isAuth = (req, res, next) => {
+    if (req.isAuthenticated()) {
+        next();
+    } else {
+        res.status(401).json({ msg: 'You are not authorized to view this resource' });
+    }
+}
+
+/* ------------------ Book Route ------------------ */
 app.post("/book", upload.single('book_file'), async(req, res) => {
     const { title, author, published_date, description, thumbnail_url } = req.body
     console.log(req.file)
@@ -45,7 +143,7 @@ app.post("/book", upload.single('book_file'), async(req, res) => {
     }
 })
 
-app.get("/book", async (req, res) => {
+app.get("/book", isAuth, async (req, res) => {
     try {
         const book = await Book.findAll()
         return res.json(book)
