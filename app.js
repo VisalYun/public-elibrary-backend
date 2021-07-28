@@ -1,13 +1,15 @@
 const express = require('express')
-var cors = require('cors')
-const multer = require('multer');
+const cors = require('cors')
+const multer = require('multer')
 const { sequelize, Book, Chapters } = require('./models')
 
 const app = express()
-app.use(cors())
 app.use(express.json())
-app.use('/uploads', express.static('uploads'))
 
+app.use(cors())
+
+/* ------------------ File Upload Config ------------------ */
+app.use('/uploads', express.static('uploads'))
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, './uploads/');
@@ -31,13 +33,14 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
+/* ------------------ Book Route ------------------ */
 app.post("/book", upload.single('book_file'), async(req, res) => {
-    const { title, author, published_date, description, thumbnail_url } = req.body
+    const { title, author, published_date, description, donator, donator_phone_number } = req.body
     console.log(req.file)
     const book_file = req.file.path
 
     try{
-        const book = await Book.create({ title, author, published_date, description, thumbnail_url, book_file })
+        const book = await Book.create({ title, author, published_date, description, book_file, donator, donator_phone_number })
         return res.json(book)
     }catch(e){
         console.log(e)

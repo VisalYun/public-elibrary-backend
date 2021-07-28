@@ -27,11 +27,23 @@ module.exports = {
       },
       thumbnail_url: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
       },
       book_file: {
         type: DataTypes.STRING,
         allowNull: false
+      },
+      donator: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      donator_phone_number: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      is_ready: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
       },
       createdAt: {
         allowNull: false,
